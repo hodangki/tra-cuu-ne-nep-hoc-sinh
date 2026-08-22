@@ -175,12 +175,8 @@ td.name{font-weight:800;color:#0f4252}
     <h3>Đổi mật khẩu lớp</h3>
     <div class="grid2">
       <div>
-        <label>Mật khẩu hiện tại</label>
-        <input id="oldPassword" type="password">
-      </div>
-      <div>
         <label>Mật khẩu mới</label>
-        <input id="newPassword" type="password">
+        <input id="newPassword" type="password" autocomplete="new-password" placeholder="Ít nhất 6 ký tự">
       </div>
     </div>
     <div style="margin-top:10px">
@@ -199,7 +195,7 @@ td.name{font-weight:800;color:#0f4252}
   let WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxcA-WVrQVjqJWgm9IvkKJ79s0AImEmbp73cPw06Zr-84YYJWzEyUhfqayc4Sa6FBE7/exec";
 
   let sessionClass = "";
-  let sessionPassword = "";
+  let studentToken = "";
   let currentWeek = null;
   let currentViolations = [];
 
@@ -265,7 +261,7 @@ td.name{font-weight:800;color:#0f4252}
     try{
       const data=await callApi({action:'student_login',className,password});
       if(data.status!=='success') return toast(data.message||'Không thể đăng nhập.',true);
-      sessionClass=className; sessionPassword=password;
+      sessionClass=className; studentToken=String(data.studentToken||"");
       currentWeek=data.currentWeek||null;
       currentViolations=Array.isArray(data.violations)?data.violations:[];
       document.getElementById('loginCard').classList.add('hidden');
@@ -303,10 +299,13 @@ td.name{font-weight:800;color:#0f4252}
   }
 
   async function refreshViolations(){
-    if(!sessionClass||!sessionPassword) return;
+    if(!sessionClass||!studentToken) return;
     try{
-      const data=await callApi({action:'student_login',className:sessionClass,password:sessionPassword});
-      if(data.status!=='success') return toast(data.message||'Không thể tải dữ liệu.',true);
+      const data=await callApi({action:'student_session_data',studentToken});
+      if(data.status!=='success'){
+        if(data.code==='STUDENT_SESSION_EXPIRED') logoutStudent();
+        return toast(data.message||'Không thể tải dữ liệu.',true);
+      }
       currentWeek=data.currentWeek||null;
       currentViolations=Array.isArray(data.violations)?data.violations:[];
       renderPortal(data.message||'');
@@ -315,7 +314,7 @@ td.name{font-weight:800;color:#0f4252}
   }
 
   function logoutStudent(){
-    sessionClass='';sessionPassword='';currentWeek=null;currentViolations=[];
+    sessionClass='';studentToken='';currentWeek=null;currentViolations=[];
     document.getElementById('classPassword').value='';
     document.getElementById('portalCard').classList.add('hidden');
     document.getElementById('loginCard').classList.remove('hidden');
@@ -336,7 +335,7 @@ td.name{font-weight:800;color:#0f4252}
     try{
       const data=await callApi({
         action:'student_submit_correction',
-        className:sessionClass,password:sessionPassword,
+        studentToken,
         rowNumber,reason,proposal
       });
       if(data.status!=='success') return toast(data.message||'Không gửi được yêu cầu.',true);
@@ -345,7 +344,6 @@ td.name{font-weight:800;color:#0f4252}
   }
 
   function openChangePassword(){
-    document.getElementById('oldPassword').value='';
     document.getElementById('newPassword').value='';
     document.getElementById('confirmPassword').value='';
     document.getElementById('passwordModal').classList.remove('hidden');
@@ -353,21 +351,20 @@ td.name{font-weight:800;color:#0f4252}
   function closeChangePassword(){document.getElementById('passwordModal').classList.add('hidden')}
 
   async function changePassword(){
-    const oldPassword=document.getElementById('oldPassword').value;
     const newPassword=document.getElementById('newPassword').value;
     const confirmPassword=document.getElementById('confirmPassword').value;
-    if(newPassword.length<4) return toast('Mật khẩu mới phải có ít nhất 4 ký tự.',true);
+    if(newPassword.length<6) return toast('Mật khẩu mới phải có ít nhất 6 ký tự.',true);
     if(newPassword!==confirmPassword) return toast('Hai mật khẩu mới chưa trùng nhau.',true);
     try{
       const data=await callApi({
         action:'student_change_password',
-        className:sessionClass,
-        currentPassword:oldPassword,
+        studentToken,
         newPassword
       });
       if(data.status!=='success') return toast(data.message||'Không đổi được mật khẩu.',true);
-      sessionPassword=newPassword;
-      closeChangePassword(); toast('Đã đổi mật khẩu lớp.');
+      closeChangePassword();
+      toast(data.message||'Đã đổi mật khẩu lớp.');
+      logoutStudent();
     }catch(e){toast(e.message,true)}
   }
 
