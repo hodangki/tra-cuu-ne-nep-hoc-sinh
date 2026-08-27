@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
-<title>Web Editor - Quản lý Nề Nếp</title>
+<title>Web Editor Mobile - Quản lý Nề Nếp</title>
 <style>
 :root{--bg:#f6f7fb;--card:#fff;--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--blue:#2563eb;--red:#dc2626;--green:#059669;--amber:#d97706;--shadow:0 10px 30px rgba(15,23,42,.08)}
 *{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}
@@ -19,7 +19,7 @@
 .overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:50;display:flex;align-items:flex-end;justify-content:center}.sheet{width:min(760px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:24px 24px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -10px 40px rgba(0,0,0,.18)}.handle{width:48px;height:5px;border-radius:999px;background:#cbd5e1;margin:0 auto 12px}.sheet h2{font-size:18px;margin:0 0 14px}.formgrid{display:grid;gap:11px}.suggest-wrap{position:relative}.suggest{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:70;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);max-height:220px;overflow:auto}.suggest-item{padding:10px 12px;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;gap:8px}.suggest-item:last-child{border-bottom:0}.suggest-item:active{background:#eff6ff}.chips{display:flex;gap:7px;overflow:auto;padding:2px 0 5px}.chip{flex:0 0 auto;border:1px solid #bfdbfe;background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:7px 10px;font-size:12px;font-weight:800}.form-actions{display:grid;grid-template-columns:1fr 1.5fr;gap:10px;margin-top:14px}
 .login{min-height:100vh;display:grid;place-items:center;padding:20px}.loginbox{width:min(430px,100%);background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow);padding:22px}.loginbox h1{margin:0 0 6px;font-size:22px}.loginbox p{margin:0 0 18px;color:var(--muted)}.loginbox .field{margin-bottom:10px}.status{min-height:20px;margin-top:10px;font-size:13px;color:var(--muted)}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:100;background:#0f172a;color:#fff;border-radius:12px;padding:10px 14px;box-shadow:var(--shadow);max-width:88vw;text-align:center;font-size:13px}.sync-spin{display:inline-block;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:480px){.grid2{grid-template-columns:1fr}.content{padding:10px}.panel{border-radius:15px}.topbar{padding:10px}.brand h1{font-size:16px}.fab{right:18px}.sheet{padding-left:13px;padding-right:13px}}
+@media(max-width:480px){.grid2{grid-template-columns:1fr 1fr}.content{padding:10px}.panel{border-radius:15px}.topbar{padding:10px}.brand h1{font-size:16px}.fab{right:18px}.sheet{padding-left:13px;padding-right:13px}.field{min-height:50px;font-size:16px}.btn{min-height:46px}.suggest-item{min-height:50px;align-items:center}.form-actions{position:sticky;bottom:0;background:#fff;padding-top:10px}.loginbox{padding:18px}}@media(max-width:360px){.grid2{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -49,11 +49,12 @@
         <button id="syncBtn" class="btn btn-green">↻ Đồng bộ danh mục</button>
       </div>
       <div class="grid2">
-        <div><label class="label">Lớp</label><select id="classFilter" class="field"><option value="">Tất cả lớp</option></select></div>
+        <div><label class="label">Lọc danh sách bên dưới</label><select id="classFilter" class="field"><option value="">Tất cả lớp</option></select></div>
         <div><label class="label">Tìm nhanh</label><input id="searchInput" class="field" placeholder="Tên / vi phạm / ghi chú"></div>
       </div>
       <div id="catalogInfo" class="summary" style="margin-top:9px">Chưa đồng bộ danh mục.</div>
     </section>
+    <button id="quickAddBtn" class="btn btn-primary" style="width:100%;min-height:52px;margin-bottom:12px;font-size:16px">＋ Nhập vi phạm</button>
     <section class="row between" style="margin:2px 2px 10px"><div id="countLine" class="summary">0 vi phạm</div><button id="refreshBtn" class="btn btn-soft">Làm mới</button></section>
     <section id="cards"></section>
   </main>
@@ -67,25 +68,27 @@
     <div class="formgrid">
       <div class="suggest-wrap">
         <label class="label">Học sinh *</label>
-        <input id="fName" class="field" autocomplete="off" placeholder="Gõ tên học sinh...">
+        <input id="fName" class="field" autocomplete="off" inputmode="search" placeholder="Gõ tên, chọn đúng Tên — Lớp">
         <div id="studentSuggest" class="suggest hidden"></div>
       </div>
-      <div class="grid2">
-        <div><label class="label">Lớp *</label><input id="fClass" class="field" readonly></div>
-        <div><label class="label">Buổi</label><select id="fSession" class="field"><option value="">—</option><option>Sáng</option><option>Chiều</option><option>Cả ngày</option></select></div>
+      <div>
+        <label class="label">Lớp</label>
+        <input id="fClass" class="field" readonly placeholder="Tự điền khi chọn học sinh">
       </div>
       <div class="suggest-wrap">
-        <label class="label">Hình thức vi phạm *</label>
-        <input id="fViolation" class="field" autocomplete="off" placeholder="Gõ mã hoặc nội dung...">
+        <label class="label">Loại vi phạm *</label>
+        <input id="fViolation" class="field" autocomplete="off" placeholder="Gõ để tìm trong danh mục Desktop...">
         <div id="violationSuggest" class="suggest hidden"></div>
       </div>
-      <div><div class="label">Gợi ý nhanh từ Desktop</div><div id="quickChips" class="chips"></div></div>
+      <div><div class="label">Gợi ý nhanh</div><div id="quickChips" class="chips"></div></div>
       <div class="grid2">
-        <div><label class="label">Ngày</label><input id="fDate" class="field" placeholder="dd/mm/yyyy"></div>
-        <div><label class="label">Ghi chú</label><input id="fNote" class="field" placeholder="Không bắt buộc"></div>
+        <div><label class="label">Ngày</label><input id="fDate" class="field" inputmode="numeric" placeholder="dd/mm/yyyy"></div>
+        <div><label class="label">Buổi</label><select id="fSession" class="field"><option>Sáng</option><option>Chiều</option><option>Cả ngày</option></select></div>
       </div>
+      <div><label class="label">Ghi chú</label><input id="fNote" class="field" placeholder="Không bắt buộc"></div>
+      <div class="summary" id="entryHint">Sau khi lưu, hệ thống giữ loại vi phạm/ngày/buổi và xóa tên để nhập học sinh tiếp theo.</div>
     </div>
-    <div class="form-actions"><button id="cancelBtn" class="btn btn-soft">Hủy</button><button id="saveBtn" class="btn btn-primary">Lưu vi phạm</button></div>
+    <div class="form-actions"><button id="cancelBtn" class="btn btn-soft">Đóng</button><button id="saveBtn" class="btn btn-primary">Lưu & nhập tiếp</button></div>
   </div>
 </div>
 <div id="toast" class="toast hidden"></div>
@@ -101,6 +104,8 @@ function toast(msg){$('toast').textContent=msg;$('toast').classList.remove('hidd
 function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 async function post(payload){const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),redirect:'follow'});return await r.json()}
 function todayVN(){return new Intl.DateTimeFormat('vi-VN',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'Asia/Ho_Chi_Minh'}).format(new Date())}
+function currentSessionVN(){const parts=new Intl.DateTimeFormat('en-GB',{hour:'2-digit',hour12:false,timeZone:'Asia/Ho_Chi_Minh'}).formatToParts(new Date());const h=Number(parts.find(x=>x.type==='hour')?.value||0);return h<12?'Sáng':'Chiều'}
+function normalizeText(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}
 function cacheCatalog(){localStorage.setItem(S.catalog,JSON.stringify(catalog))}
 function restoreCatalog(){try{const c=JSON.parse(localStorage.getItem(S.catalog)||'null');if(c&&Array.isArray(c.students))catalog=c}catch(_){}}
 
@@ -110,18 +115,18 @@ async function syncCatalog(showToast=true){$('syncBtn').disabled=true;$('syncBtn
 function applyCatalogUI(){const selected=$('classFilter').value;$('classFilter').innerHTML='<option value="">Tất cả lớp</option>'+catalog.classes.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');if(catalog.classes.includes(selected))$('classFilter').value=selected;const w=catalog.currentWeek;$('weekTitle').textContent=w?`${catalog.activeYear||''} • Tuần ${w.weekNum}`:`${catalog.activeYear||''} • Ngoài tuần học`;$('userLine').textContent=`${me?.username||''} • ${me?.role||'editor'}`;$('catalogInfo').textContent=`${catalog.students.length} học sinh • ${catalog.violationTypes.length} danh mục vi phạm`;renderQuickChips()}
 async function loadRows(){const d=await post({action:'editor_get_violations',authToken,className:$('classFilter').value});if(d.status!=='success')throw new Error(d.message||'Không tải được dữ liệu');rows=d.rows||[];if(d.currentWeek){catalog.currentWeek=d.currentWeek;applyCatalogUI()}renderRows()}
 function renderRows(){const q=$('searchInput').value.toLowerCase().trim();const filtered=rows.filter(r=>!q||[r.name,r.className,r.violation,r.date,r.session,r.note].some(v=>String(v||'').toLowerCase().includes(q)));$('countLine').textContent=`${filtered.length} vi phạm`;if(!filtered.length){$('cards').innerHTML='<div class="empty">Không có dữ liệu phù hợp.</div>';return}$('cards').innerHTML=filtered.map(r=>`<article class="card"><div class="card-head"><div class="student">${escapeHtml(r.name)}</div><span class="class-tag">${escapeHtml(r.className)}</span></div><div class="vio">${escapeHtml(r.violation)}</div><div class="meta"><span>📅 ${escapeHtml(r.date||'—')}</span><span>• ${escapeHtml(r.session||'—')}</span>${r.note?`<span>• ${escapeHtml(r.note)}</span>`:''}</div><div class="actions"><button class="btn btn-soft" onclick="openEdit(${Number(r.rowNumber)})">Sửa</button><button class="btn btn-danger" onclick="deleteRow(${Number(r.rowNumber)},'${escapeHtml(String(r.name).replace(/'/g,"\\'"))}')">Xóa</button></div></article>`).join('')}
-function openNew(){editingRow=null;$('formTitle').textContent='Thêm vi phạm';$('fName').value='';$('fClass').value=$('classFilter').value||'';$('fViolation').value='';$('fDate').value=todayVN();$('fSession').value='';$('fNote').value='';$('editorOverlay').classList.remove('hidden');setTimeout(()=>$('fName').focus(),100)}
-function openEdit(rowNumber){const r=rows.find(x=>Number(x.rowNumber)===Number(rowNumber));if(!r)return;editingRow=rowNumber;$('formTitle').textContent='Sửa vi phạm';$('fName').value=r.name||'';$('fClass').value=r.className||'';$('fViolation').value=r.violation||'';$('fDate').value=r.date||'';$('fSession').value=r.session||'';$('fNote').value=r.note||'';$('editorOverlay').classList.remove('hidden')}
+function openNew(){editingRow=null;$('formTitle').textContent='Thêm vi phạm';$('saveBtn').textContent='Lưu & nhập tiếp';$('entryHint').classList.remove('hidden');$('fName').value='';$('fClass').value='';$('fViolation').value='';$('fDate').value=todayVN();$('fSession').value=currentSessionVN();$('fNote').value='';$('editorOverlay').classList.remove('hidden');setTimeout(()=>$('fName').focus(),100)}
+function openEdit(rowNumber){const r=rows.find(x=>Number(x.rowNumber)===Number(rowNumber));if(!r)return;editingRow=rowNumber;$('formTitle').textContent='Sửa vi phạm';$('saveBtn').textContent='Lưu thay đổi';$('entryHint').classList.add('hidden');$('fName').value=r.name||'';$('fClass').value=r.className||'';$('fViolation').value=r.violation||'';$('fDate').value=r.date||'';$('fSession').value=r.session||'';$('fNote').value=r.note||'';$('editorOverlay').classList.remove('hidden')}
 function closeForm(){$('editorOverlay').classList.add('hidden');$('studentSuggest').classList.add('hidden');$('violationSuggest').classList.add('hidden')}
 function recordFromForm(){return{name:$('fName').value.trim(),className:$('fClass').value.trim(),violation:$('fViolation').value.trim(),date:$('fDate').value.trim(),session:$('fSession').value.trim(),note:$('fNote').value.trim()}}
-async function saveForm(){if(busy)return;const record=recordFromForm();if(!record.name||!record.className||!record.violation){toast('Vui lòng chọn học sinh và nhập vi phạm');return}busy=true;$('saveBtn').disabled=true;try{const payload=editingRow?{action:'editor_update_violation',authToken,rowNumber:editingRow,record}:{action:'editor_add_violation',authToken,record};const d=await post(payload);if(d.status!=='success')throw new Error(d.message||'Không lưu được');closeForm();toast(d.message||'Đã lưu');await loadRows()}catch(e){toast(e.message)}finally{busy=false;$('saveBtn').disabled=false}}
+async function saveForm(){if(busy)return;const record=recordFromForm();if(!record.name||!record.className){toast('Hãy chọn học sinh từ danh sách gợi ý');return}if(!record.violation){toast('Vui lòng chọn hoặc nhập loại vi phạm');return}busy=true;$('saveBtn').disabled=true;try{const wasEdit=!!editingRow;const payload=wasEdit?{action:'editor_update_violation',authToken,rowNumber:editingRow,record}:{action:'editor_add_violation',authToken,record};const d=await post(payload);if(d.status!=='success')throw new Error(d.message||'Không lưu được');toast(d.message||'Đã lưu');await loadRows();if(wasEdit){closeForm()}else{editingRow=null;$('fName').value='';$('fClass').value='';$('fNote').value='';$('studentSuggest').classList.add('hidden');setTimeout(()=>$('fName').focus(),80)}}catch(e){toast(e.message)}finally{busy=false;$('saveBtn').disabled=false}}
 async function deleteRow(rowNumber,name){if(!confirm(`Xóa vi phạm của ${name}?`))return;try{const d=await post({action:'editor_delete_violation',authToken,rowNumber});if(d.status!=='success')throw new Error(d.message||'Không xóa được');toast('Đã xóa');await loadRows()}catch(e){toast(e.message)}}
-function studentSuggestions(){const q=$('fName').value.toLowerCase().trim();const classHint=$('fClass').value.trim();if(!q){$('studentSuggest').classList.add('hidden');return}const a=catalog.students.filter(s=>(!classHint||s.className===classHint)&&String(s.name||'').toLowerCase().includes(q)).slice(0,30);$('studentSuggest').innerHTML=a.map(s=>`<div class="suggest-item" data-name="${escapeHtml(s.name)}" data-class="${escapeHtml(s.className)}"><b>${escapeHtml(s.name)}</b><span class="class-tag">${escapeHtml(s.className)}</span></div>`).join('');$('studentSuggest').classList.toggle('hidden',!a.length)}
+function studentSuggestions(){const q=normalizeText($('fName').value.trim());if(!q){$('studentSuggest').classList.add('hidden');return}const a=catalog.students.filter(s=>normalizeText(String(s.name||'')).includes(q)||normalizeText(String(s.className||'')).includes(q)).slice(0,40);$('studentSuggest').innerHTML=a.map(s=>`<div class="suggest-item" data-name="${escapeHtml(s.name)}" data-class="${escapeHtml(s.className)}"><b>${escapeHtml(s.name)}</b><span class="class-tag">${escapeHtml(s.className)}</span></div>`).join('');$('studentSuggest').classList.toggle('hidden',!a.length)}
 function violationSuggestions(){const q=$('fViolation').value.toLowerCase().trim();if(!q){$('violationSuggest').classList.add('hidden');return}const a=catalog.violationTypes.filter(v=>String(v.code||'').toLowerCase().startsWith(q)||String(v.desc||'').toLowerCase().includes(q)).slice(0,20);$('violationSuggest').innerHTML=a.map(v=>`<div class="suggest-item" data-vio="${escapeHtml(v.desc)}"><b>${escapeHtml(v.desc)}</b><span>${escapeHtml(v.code||'')}</span></div>`).join('');$('violationSuggest').classList.toggle('hidden',!a.length)}
 function renderQuickChips(){$('quickChips').innerHTML=catalog.violationTypes.slice(0,12).map(v=>`<button type="button" class="chip" data-chip="${escapeHtml(v.desc)}">${escapeHtml(v.desc)}</button>`).join('')}
 async function logout(callServer=true){const t=authToken;authToken='';me=null;localStorage.removeItem(S.token);if(callServer&&t){try{await post({action:'auth_logout',authToken:t,deviceInfo:navigator.userAgent,clientTime:new Date().toISOString()})}catch(_){}}$('appView').classList.add('hidden');$('loginView').classList.remove('hidden');$('loginPass').value=''}
 
-$('loginBtn').onclick=login;$('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')login()});$('logoutBtn').onclick=()=>logout(true);$('syncBtn').onclick=()=>syncCatalog(true);$('refreshBtn').onclick=()=>loadRows().catch(e=>toast(e.message));$('classFilter').onchange=()=>loadRows().catch(e=>toast(e.message));$('searchInput').oninput=renderRows;$('addBtn').onclick=openNew;$('cancelBtn').onclick=closeForm;$('saveBtn').onclick=saveForm;$('editorOverlay').addEventListener('click',e=>{if(e.target===$('editorOverlay'))closeForm()});$('fName').addEventListener('input',studentSuggestions);$('fName').addEventListener('focus',studentSuggestions);$('fViolation').addEventListener('input',violationSuggestions);$('fViolation').addEventListener('focus',violationSuggestions);
+$('loginBtn').onclick=login;$('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')login()});$('logoutBtn').onclick=()=>logout(true);$('syncBtn').onclick=()=>syncCatalog(true);$('refreshBtn').onclick=()=>loadRows().catch(e=>toast(e.message));$('classFilter').onchange=()=>loadRows().catch(e=>toast(e.message));$('searchInput').oninput=renderRows;$('addBtn').onclick=openNew;$('quickAddBtn').onclick=openNew;$('cancelBtn').onclick=closeForm;$('saveBtn').onclick=saveForm;$('editorOverlay').addEventListener('click',e=>{if(e.target===$('editorOverlay'))closeForm()});$('fName').addEventListener('input',studentSuggestions);$('fName').addEventListener('focus',studentSuggestions);$('fViolation').addEventListener('input',violationSuggestions);$('fViolation').addEventListener('focus',violationSuggestions);
 $('studentSuggest').addEventListener('click',e=>{const it=e.target.closest('.suggest-item');if(!it)return;$('fName').value=it.dataset.name||'';$('fClass').value=it.dataset.class||'';$('studentSuggest').classList.add('hidden');$('fViolation').focus()});
 $('violationSuggest').addEventListener('click',e=>{const it=e.target.closest('.suggest-item');if(!it)return;$('fViolation').value=it.dataset.vio||'';$('violationSuggest').classList.add('hidden')});
 $('quickChips').addEventListener('click',e=>{const b=e.target.closest('[data-chip]');if(b)$('fViolation').value=b.dataset.chip||''});
